@@ -1,7 +1,7 @@
 # MRMkit
 MRMkit: automated data processing for large-scale targeted mass spectrometry
  
-<img src="Figure1_small.pdf" align="left">
+<img src="Figure1_small.png" align="left">
 
 
 ## Installing 
