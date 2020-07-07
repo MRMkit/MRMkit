@@ -4,6 +4,8 @@
  
 <img src="Figure1_small.png" align="left">
 
+See the [manual](manual.pdf) for full documentation.
+
 ## Installing 
 
 ### Unix
