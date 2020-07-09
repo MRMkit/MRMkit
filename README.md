@@ -10,10 +10,11 @@ See the [manual](manual.pdf) for full documentation.
 
 ### Unix
 
-Installation of python3 (>=3.7) is required. See for [commands.md](commands.md) usage.
+Installation of [python3](https://www.python.org/) (>=3.7) and [R](https://cran.r-project.org/) (>=4.0.0) is required. See for [commands.md](commands.md) usage.
 
 ### Windows
 
+Installation of [R](https://cran.r-project.org/) is required.
 Executables for 64-bit Windows are included [here](https://drive.google.com/).
 
 ## Example dataset
