@@ -10,7 +10,7 @@ See the [manual](manual.pdf) for full documentation.
 
 ### Unix
 
-Installation of [python3](https://www.python.org/) (>=3.7), numpy, matplotlib and [R](https://cran.r-project.org/) (>=4.0) is required. See for [commands.md](commands.md) usage.
+Installation of [python3](https://www.python.org/) (>=3.7), numpy, matplotlib and [R](https://cran.r-project.org/) (>=4.0) is required. See [commands.md](commands.md) for usage.
 
 ### Windows
 
