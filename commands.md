@@ -9,6 +9,9 @@ python3 {path_to_MRMkit}/MRMistd.py
 # peak detection
 python3 {path_to_MRMkit}/MRMgetpeak.py
 
+# draw ion chromatograms
+Rscript {path_to_MRMkit}/MRMionc.r
+
 # batch correction
 python3 {path_to_MRMkit}/MRMcorrect.py
 
