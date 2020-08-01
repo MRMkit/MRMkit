@@ -65,7 +65,7 @@ findridge2=partial(MRMcwt.findridge0,wave_scales,wave_sqrt,True)
 for trans in t_list:
     open(trans2filename[trans],'w').write('{}\n'.format(trans.name))
 
-def write_to_trans(mzml,eic_dict,trans):
+def write_to_trans(eic_dict,trans):
 
     rt_f=commonfn.find_trans([*eic_dict],trans)
     if rt_f is None:
@@ -117,16 +117,20 @@ with open('trans_mzML_list.txt','w')as mf_list:
         basename0=os.path.basename(mf)
         mf_list.write(basename0+'\n')
 
-nfile=math.ceil(len(mzML_files)/math.ceil(len(mzML_files)/999))
+open('missing_compounds.txt','w')
+
+nfile=math.ceil(len(mzML_files)/math.ceil(len(mzML_files)/300))
 for sta_ in range(0,len(mzML_files),nfile):
     with concurrent.futures.ProcessPoolExecutor(max_workers=9) as executor:
         eic_dict_all=list(executor.map(MRMeic.print_eic,mzML_files[sta_:sta_+nfile]))
     print('{} - {}'.format(sta_+1,sta_+nfile))
     def write_block(trans):
-        with open(trans2filename[trans],'a') as fo:
+        with open(trans2filename[trans],'a') as fo,open('missing_compounds.txt','a')as miss_cpd:
             for mzml,eic_dict in zip(mzML_files[sta_:sta_+nfile],eic_dict_all):
-                rt_I_feats=write_to_trans(mzml,eic_dict,trans)
+                rt_I_feats=write_to_trans(eic_dict,trans)
                 if rt_I_feats is None:
+                    print('"{}" not in "{}"'.format(trans.name,mzml))
+                    miss_cpd.write('"{}" not in "{}"\n'.format(trans.name,mzml))
                     continue
                 rt_I,feats=rt_I_feats
                 fo.write('{}\n'.format('\t'.join(str(x) for x in rt_I[0])))
@@ -134,9 +138,9 @@ for sta_ in range(0,len(mzML_files),nfile):
                 for feat in feats:
                     fo.write('{:.3f}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\n'.format(feat.rt,feat.auc,feat.begin,feat.end,feat.sc))
                 fo.write('\n')
-    with concurrent.futures.ProcessPoolExecutor(max_workers=9) as executor:
-        list(executor.map(write_block,t_list))
-missing_istd=open('missing_compounds.txt','w')
+    list(map(write_block,t_list))
+    
+miss_cpd=open('missing_compounds.txt','a')
 for trans_file in glob.glob(os.path.join(miscdir,'trans_*Q1_*Q3_*.txt')):
     with open(trans_file) as trans_f:
         cs=0
@@ -147,7 +151,7 @@ for trans_file in glob.glob(os.path.join(miscdir,'trans_*Q1_*Q3_*.txt')):
         trans_name=trans_f.readline().rstrip()
     if cs<len(mzML_files):
         print('removed {}. Present in {}/{} samples'.format(trans_name,cs,len(mzML_files)))
-        missing_istd.write('removed {}. Present in {}/{} samples\n'.format(trans_name,cs,len(mzML_files)))
+        miss_cpd.write('removed {}. Present in {}/{} samples\n'.format(trans_name,cs,len(mzML_files)))
         os.remove(trans_file)
 
 
