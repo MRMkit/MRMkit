@@ -23,8 +23,11 @@ param_set={
         "batch_info",
         "batch_correction",
         "transition_list",
+        "smoothing_sigma",
         }
 param_dict=commonfn.read_param(param_set)
+
+sig=float(param_dict.get("smoothing_sigma",10))
 
 corr0=int(param_dict["batch_correction"]) #set drift correction?
 transition=param_dict["transition_list"]
@@ -81,7 +84,7 @@ with open('quant_auc_rt.txt') as quant:
         if lsp[starti+blocklen]:  #exclude ISTD
             norm_dat.append(lsp[:starti]+[float(lsp[starti+blocklen+fo]) for fo in file_ord])
 
-def dnorm(x,sig=10):
+def dnorm(x):
     return math.exp(-.5*(x/sig)**2)
 
 largest_b=max(len(v) for v in batch_files.values())

@@ -119,8 +119,8 @@ open('missing_compounds.txt','w')
 
 nfile=math.ceil(len(mzML_files)/math.ceil(len(mzML_files)/300))
 for sta_ in range(0,len(mzML_files),nfile):
-    eic_dict_all=list(map(MRMeic.print_eic,mzML_files[sta_:sta_+nfile]))
-    
+    with concurrent.futures.ProcessPoolExecutor(max_workers=9) as executor:
+        eic_dict_all=list(executor.map(MRMeic.print_eic,mzML_files[sta_:sta_+nfile]))
     print('{} - {}'.format(sta_+1,sta_+nfile))
     def write_block(trans):
         with open(trans2filename[trans],'a') as fo,open('missing_compounds.txt','a')as miss_cpd:
@@ -135,8 +135,8 @@ for sta_ in range(0,len(mzML_files),nfile):
                 for feat in feats:
                     fo.write('{:.3f}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\n'.format(feat.rt,feat.auc,feat.begin,feat.end,feat.sc))
                 fo.write('\n')
-    list(map(write_block,t_list))
-    
+    with concurrent.futures.ProcessPoolExecutor(max_workers=9) as executor:
+        list(executor.map(write_block,t_list))
 miss_cpd=open('missing_compounds.txt','a')
 for trans_file in glob.glob(os.path.join(miscdir,'trans_*Q1_*Q3_*.txt')):
     with open(trans_file) as trans_f:

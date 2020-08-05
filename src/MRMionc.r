@@ -61,7 +61,7 @@ fx <- function(trans_file) {
             } else {
                 abline(v=peak[1],col=colorp[i],lty=peak[3])
                 peaklen=(length(peak)-3)/2
-                lines(x=peak[3+1:peaklen],y=peak[peaklen+3+1:peaklen],col=colorp[i],lty=peak[3])#,cex=.7)
+                lines(x=peak[3+1:peaklen],y=peak[peaklen+3+1:peaklen],col=colorp[i],lty=peak[3])
             }
         }
     }
