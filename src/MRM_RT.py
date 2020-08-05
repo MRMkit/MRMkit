@@ -13,7 +13,6 @@ with open('peak_picking.txt') as usersRT:
         if rt_l:
             t_list['{}\t{:.1f}\t{:.1f}'.format(lsp[1],float(lsp[2]),float(lsp[3]))]=[float(x)for x in rt_l]
 
-import sys
 
 
 with open('batch_adjusted.txt') as batchadj, open('quant_table.txt','w') as batchadj_:
@@ -53,6 +52,3 @@ with open('batch_adjusted.txt') as batchadj, open('quant_table.txt','w') as batc
         for (cpd,q1,q3,rt),colv in sumcol_dict.items():
             batchadj_.write('\t{}'.format(colv[i]))
         batchadj_.write('\n')
-
-
-

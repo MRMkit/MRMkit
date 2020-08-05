@@ -88,16 +88,14 @@ def write_to_trans(eic_dict,trans):
             rt_l=sorted(x.rt for x in feats_)
             postop=bisect_left(rt_l,feats_[0].rt)
             if 0<postop<len(rt_l)-1:
-                begin0=max(feats_[0].rt-feats_[0].sc*5,(rt_l[postop-1]+rt_l[postop])/2)
-                end0=min(feats_[0].rt+feats_[0].sc*5,(rt_l[postop]+rt_l[postop+1])/2)
+                begin0=(rt_l[postop-1]+rt_l[postop])/2
+                end0=(rt_l[postop]+rt_l[postop+1])/2
             elif postop==0:
-                begin0=feats_[0].rt-feats_[0].sc*5
-                end0=min(feats_[0].rt+feats_[0].sc*5,(rt_l[postop]+rt_l[postop+1])/2)
+                begin0=feats[0].begin
+                end0=(rt_l[postop]+rt_l[postop+1])/2
             elif postop==len(rt_l)-1:
-                begin0=max(feats_[0].rt-feats_[0].sc*5,(rt_l[postop-1]+rt_l[postop])/2)
-                end0=feats_[0].rt+feats_[0].sc*5
-            begin0=max(begin0,feats[0].begin)
-            end0=min(end0,feats[0].end)
+                begin0=(rt_l[postop-1]+rt_l[postop])/2
+                end0=feats[0].end
             pos0=bisect_left(rt_,begin0)
             pos1=bisect_left(rt_,end0)
             RT_I_=list(zip(rt_,I_))[pos0:pos1]
@@ -119,7 +117,7 @@ with open('trans_mzML_list.txt','w')as mf_list:
 
 open('missing_compounds.txt','w')
 
-nfile=math.ceil(len(mzML_files)/math.ceil(len(mzML_files)/300))
+nfile=math.ceil(len(mzML_files)/math.ceil(len(mzML_files)/900))
 for sta_ in range(0,len(mzML_files),nfile):
     with concurrent.futures.ProcessPoolExecutor(max_workers=9) as executor:
         eic_dict_all=list(executor.map(MRMeic.print_eic,mzML_files[sta_:sta_+nfile]))
@@ -129,7 +127,6 @@ for sta_ in range(0,len(mzML_files),nfile):
             for mzml,eic_dict in zip(mzML_files[sta_:sta_+nfile],eic_dict_all):
                 rt_I_feats=write_to_trans(eic_dict,trans)
                 if rt_I_feats is None:
-                    print('"{}" not in "{}"'.format(trans.name,mzml))
                     miss_cpd.write('"{}" not in "{}"\n'.format(trans.name,mzml))
                     continue
                 rt_I,feats=rt_I_feats
@@ -138,8 +135,8 @@ for sta_ in range(0,len(mzML_files),nfile):
                 for feat in feats:
                     fo.write('{:.3f}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\n'.format(feat.rt,feat.auc,feat.begin,feat.end,feat.sc))
                 fo.write('\n')
-    list(map(write_block,t_list))
-    
+    with concurrent.futures.ProcessPoolExecutor(max_workers=9) as executor:
+        list(executor.map(write_block,t_list))
 miss_cpd=open('missing_compounds.txt','a')
 for trans_file in glob.glob(os.path.join(miscdir,'trans_*Q1_*Q3_*.txt')):
     with open(trans_file) as trans_f:

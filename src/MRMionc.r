@@ -16,53 +16,6 @@ mzML_files=(readLines("trans_mzML_list.txt"))
 colorp=c('blue','green','red','cyan','magenta')
 colorp=rep(colorp,2)
 
-by_sample=0
-
-if (by_sample ){
-    dat=vector(length=length(trans_files))
-    for (i in 1:length(trans_files)) {
-        dat[i]=list(readLines(trans_files[i]))
-        print(trans_files[i])
-    }
-    pos=rep(2,length(trans_files))
-
-    for (i in seq(1,length(mzML_files),10000)) {
-        pdf(file.path('IonChromatogram',paste0('IonC',wstr,'_',mzML_files[i],'.pdf')))#,useDingBats = FALSE)
-        par(mfrow=c(4,2),oma = c(0,0,0,0) , mar = c(2,2,2,1))
-        for (ii in 1:length(trans_files)) {
-            dat0=unlist(dat[ii])
-            rt_=unlist(strsplit(dat0[pos[ii]],"\t"))
-            I_=as.numeric(unlist(strsplit(dat0[pos[ii]+1],"\t")))
-            peaks=c()
-            for (iii in (pos[ii]+2):length(dat0)) {
-                if (dat0[iii]!=""){
-                    peaks=c(peaks,list(as.numeric(unlist(strsplit(dat0[iii],"\t")))))
-                }else{
-                    pos[ii]=iii+1
-                    break
-                }
-            }
-            plot(x=rt_,y=I_,pch=19,cex=.3,xlab='',ylab='',ylim=c(0,max(I_)*1.1))
-            title(main = dat0[1])
-            minI=min(I_)
-            if(length(peaks)>0)for (iii in 1:min(length(peaks),length(colorp))){
-                peak=unlist(peaks[iii])
-                if (wstr==''){
-                    abline(v=peak[1],col=colorp[iii])
-                    points(x=c(peak[3],peak[4]),y=rep(minI,2),col=colorp[iii])
-                } else {
-                    abline(v=peak[1],col=colorp[iii],lty=peak[3])
-                    peaklen=(length(peak)-3)/2
-                    points(x=peak[3+1:peaklen],y=peak[peaklen+3+1:peaklen],col=colorp[iii],cex=.7)
-                }
-            }
-        }
-        dev.off()
-        if (i%%100==0) print(mzML_files[i])
-    }
-
-}
-
 fx <- function(trans_file) {
     dat=readLines(trans_file)
     if (length(dat)<=2){
@@ -108,7 +61,7 @@ fx <- function(trans_file) {
             } else {
                 abline(v=peak[1],col=colorp[i],lty=peak[3])
                 peaklen=(length(peak)-3)/2
-                points(x=peak[3+1:peaklen],y=peak[peaklen+3+1:peaklen],col=colorp[i],cex=.7)
+                lines(x=peak[3+1:peaklen],y=peak[peaklen+3+1:peaklen],col=colorp[i],lty=peak[3])#,cex=.7)
             }
         }
     }
@@ -166,4 +119,10 @@ fx <- function(trans_file) {
 
 
 results = mclapply(trans_files, fx, mc.cores =19)
+
+
+
+
+
+
 

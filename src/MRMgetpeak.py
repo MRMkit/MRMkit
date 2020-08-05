@@ -149,9 +149,9 @@ def write_to_trans(trans):
             firstdecile_=sorted(istd_eicfeat[1])[int(len(istd_eicfeat[1])/10)]
             RT_I=[(x,max(0,y-firstdecile_))for x,y in zip(*istd_eicfeat[:2]) if maxf[2]-.001<x<maxf[3]+.001]
             if 2*(maxf[0]-maxf[2])<maxf[3]-maxf[0]:
-                RT_I=[(2*maxf[0]-x,y)for x,y in RT_I if x>1+2*maxf[0]-maxf[2]]+RT_I
+                RT_I=[(2*maxf[0]-x,y)for x,y in RT_I[::-1] if x>1+2*maxf[0]-maxf[2]]+RT_I
             elif 2*(maxf[3]-maxf[0])<maxf[0]-maxf[2]:
-                RT_I=RT_I+[(2*maxf[0]-x,y)for x,y in RT_I if x<1+2*maxf[0]-maxf[3]]
+                RT_I=RT_I+[(2*maxf[0]-x,y)for x,y in RT_I[::-1] if x<-1+2*maxf[0]-maxf[3]]
             topN=sorted(RT_I,key=lambda x:abs(x[0]-maxf[0]))[:4]
             apex_istd=max(x for _,x in topN+[(None,1)]) #min 1
 

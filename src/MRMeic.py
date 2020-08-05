@@ -41,7 +41,6 @@ def print_eic(mzML_file):
 
     for _, element in ET.iterparse(open(mzML_file,'rb')):
         if element.tag == '{http://psi.hupo.org/ms/mzml}chromatogram':
-            id0=element.attrib['id']
             precursor=element.find("{http://psi.hupo.org/ms/mzml}precursor//*[@accession='MS:1000827']")
             product=element.find("{http://psi.hupo.org/ms/mzml}product//*[@accession='MS:1000827']")
             Q1,Q3=0,0
@@ -53,11 +52,5 @@ def print_eic(mzML_file):
             element.clear()
 
     return {k:eic_dict0[k] for k in sorted(eic_dict0)}
-
-
-if __name__ == '__main__':
-    freeze_support()
-    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
-        list(executor.map(print_eic, sorted(glob.glob('../SP2_lipid_mzML/*mzML'))))
 
 

@@ -99,10 +99,9 @@ def gp_reg(ss,start0,end0):
             xx.append(x)
     if len(yy)<3:
         return xs,[0]*len(xs)
-    q3=np.quantile(yy,.75)
-    q1=np.quantile(yy,.25)
-    ub=q3+max(1,q3-q1)*1.5
-    lb=q1-max(1,q3-q1)*1.5
+    q1,q3=np.quantile(yy,[.1,.9])
+    ub=q3+max(1,q3-q1)
+    lb=q1-max(1,q3-q1)
     ss=[(y,z) for y,z in zip(xx,yy) if lb<z<ub]
     xx=[x for x,_ in ss]
     yy=[x for _,x in ss]
@@ -165,11 +164,10 @@ with PdfPages(pdf_file) as pdf0:
             log2nd_=[x for x,y in zip(log2nd,type_l)if y=='SAMPLE']
             ax0.scatter(seq0sam,log2nd_,s=2,color='k',alpha=.2)
             ax0.legend()
-            q3=np.quantile(log2nd,.75)
-            q1=np.quantile(log2nd,.25)
-            ub=q3+max(1,q3-q1)*3
-            lb=q1-max(1,q3-q1)*3
-            ax0.set_ylim(lb,ub)
+            q1,q3=np.quantile(log2nd,[.1,.9])
+            ub=q3+max(1,q3-q1)
+            lb=q1-max(1,q3-q1)
+            ax0.set_ylim(lb-.5,ub+.5)
 
         nd=[math.log2(x) for x in nd_ if x>0]
         if corr0:
@@ -201,11 +199,10 @@ with PdfPages(pdf_file) as pdf0:
             ax1.scatter(seq0TQC,adj_dat0_,s=2,color='b')
             adj_dat0_=[x for x,y in zip(adj_dat0,type_l)if y=='SAMPLE']
             ax1.scatter(seq0sam,adj_dat0_,s=2,color='k',alpha=.2)
-            q3=np.quantile(log2nd,.75)
-            q1=np.quantile(log2nd,.25)
-            ub=q3+max(1,q3-q1)*3
-            lb=q1-max(1,q3-q1)*3
-            ax1.set_ylim(lb,ub)
+            q1,q3=np.quantile(log2nd,[.1,.9])
+            ub=q3+max(1,q3-q1)
+            lb=q1-max(1,q3-q1)
+            ax1.set_ylim(lb-.5,ub+.5)
 
         adj_dat.append(np.power(2,adj_dat0))
 
