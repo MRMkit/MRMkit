@@ -19,6 +19,7 @@ param_set={
         "mzML_files",
         "transition_list",
         "ISTD_trace_all",
+        "max_RTshift",
         }
 param_dict=commonfn.read_param(param_set)
 
@@ -66,7 +67,7 @@ def get_EIC_feats(feat_in):
         RTline=feat_in.readline()
 
 
-max_RTshift=5
+max_RTshift=float(param_dict.get("max_RTshift",5))
 
 def my_median(ll):
     lll=sorted(ll)
@@ -131,7 +132,7 @@ def write_to_trans(trans):
                 remaining=[x for x in feats_rt if x not in added]
                 if remaining:
                     feat0=min(remaining,key=lambda x:abs(x-feat_rt))
-                    if abs(feat0-feat_rt)<max_RTshift or len(median_rt)==1:
+                    if abs(feat0-feat_rt)<max_RTshift:# or len(median_rt)==1:
                         new_rt.append((feat0,1))
                         added.add(feat0)
                     else:
@@ -155,8 +156,7 @@ def write_to_trans(trans):
             topN=sorted(RT_I,key=lambda x:abs(x[0]-maxf[0]))[:4]
             apex_istd=max(x for _,x in topN+[(None,1)]) #min 1
 
-            if len(new_rt)>1 or ISTD_trace_all:
-
+            if ISTD_trace_all:
                 for feat_rt,cc in new_rt:
                     topN=sorted(zip(rt_,I_),key=lambda x:abs(x[0]-feat_rt))[:2]
                     apex_int=max(x for _,x in topN)
@@ -169,9 +169,15 @@ def write_to_trans(trans):
                     fo.write('\n')
                 fo.write('\n')
             else:
-                for feat_rt,cc in new_rt:
-                    pos0=bisect_left(rt_,feat_rt-2.5*maxf[4])
-                    pos1=bisect_left(rt_,feat_rt+2.5*maxf[4])
+                for jj,(feat_rt,cc) in enumerate(new_rt):
+                    if jj==0:
+                        pos0=bisect_left(rt_,feat_rt-2.5*maxf[4])
+                    else:
+                        pos0=bisect_left(rt_,(new_rt[jj-1][0]+feat_rt)/2)
+                    if jj==len(new_rt)-1:
+                        pos1=bisect_left(rt_,feat_rt+2.5*maxf[4])
+                    else:
+                        pos1=bisect_left(rt_,(new_rt[jj+1][0]+feat_rt)/2)
                     RT_I_=list(zip(rt_,I_))[pos0:pos1]
                     auc=sum((rt_i0[1]+rt_i1[1])*(rt_i1[0]-rt_i0[0]) for rt_i0,rt_i1 in zip(RT_I_,RT_I_[1:]))/2
                     fo.write('{:.3f}\t{}\t{}\t'.format(feat_rt,auc,cc))

@@ -13,7 +13,8 @@ import concurrent.futures
 import re
 from multiprocessing import freeze_support
 
-Eic=collections.namedtuple('Eic',('q1 q3 eickey minRT maxRT'))
+import commonfn
+Eic=commonfn.Eic
 
 
 
@@ -35,7 +36,6 @@ def store_scan(element):
 
 def print_eic(mzML_file):
 
-    basename0=os.path.basename(mzML_file)
     eic_dict0=dict()
     eickey=0
 

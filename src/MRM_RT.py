@@ -14,6 +14,15 @@ with open('peak_picking.txt') as usersRT:
             t_list['{}\t{:.1f}\t{:.1f}'.format(lsp[1],float(lsp[2]),float(lsp[3]))]=[float(x)for x in rt_l]
 
 
+QCdict=dict()
+with open('BQCtable.txt') as BQCtab, open('TQCtable.txt') as TQCtab:
+    BQCtab.readline()
+    TQCtab.readline()
+    for bline,tline in zip(BQCtab,TQCtab):
+        blsp=bline.split('\t')[:6]
+        tlsp=tline.split('\t')[:6]
+        QCdict[(blsp[0].split(' RT')[0],)+tuple(blsp[1:4])+(int(blsp[0].split(' RT')[1]),)]=(blsp[5],tlsp[5])
+
 
 with open('batch_adjusted.txt') as batchadj, open('quant_table.txt','w') as batchadj_:
     cpdname=batchadj.readline().rstrip('\n').split('\t')[3:]
@@ -46,7 +55,10 @@ with open('batch_adjusted.txt') as batchadj, open('quant_table.txt','w') as batc
     batchadj_.write(next(first3)+'\t'+'\t'.join(x for x,_,_,_ in selcpd)+'\n')
     batchadj_.write(next(first3)+'\t'+'\t'.join(x for _,x,_,_ in selcpd)+'\n')
     batchadj_.write(next(first3)+'\t'+'\t'.join(x for _,_,x,_ in selcpd)+'\n')
-    batchadj_.write(next(first3)+'\t'+'\t'.join(x for _,_,_,x in selcpd)+'\n')
+    next(first3)
+    batchadj_.write('detected_RT\t\t'+'\t'+'\t'.join(', '.join(str(xx) for xx in x) for x in selcpd.values())+'\n')
+    batchadj_.write('%CoV(BQC)\t\t'+'\t'+'\t'.join(', '.join(QCdict[k+(xx,)][0] for xx in x) for k,x in selcpd.items())+'\n')
+    batchadj_.write('%CoV(TQC)\t\t'+'\t'+'\t'.join(', '.join(QCdict[k+(xx,)][1] for xx in x) for k,x in selcpd.items())+'\n')
     for i in range(len(colv)):
         batchadj_.write(next(first3))
         for (cpd,q1,q3,rt),colv in sumcol_dict.items():

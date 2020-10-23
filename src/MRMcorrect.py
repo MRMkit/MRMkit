@@ -13,6 +13,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.style as mplstyle
 mplstyle.use([ 'fast'])
 import numpy as np
+print('NumPy',np.__version__)
+print('Matplotlib',matplotlib.__version__)
 
 
 import commonfn
@@ -53,6 +55,8 @@ with open(batch_info_file) as bfile:
     for line in bfile:
         if line[0]!='#'and line.rstrip():
             lsp=line.rstrip('\n').split('\t')
+            if not lsp[0].endswith('.mzML'):
+                lsp[0]+='.mzML'
             batch_files[lsp[1]].append(lsp[0])
             file_batch[lsp[0]]=lsp[1]
             file_type[lsp[0]]=lsp[2].upper()
@@ -97,7 +101,7 @@ def gp_reg(ss,start0,end0):
     yy=[]
     xx=[]
     for x,y in ss:
-        if y is not None and np.isfinite(y):
+        if np.isfinite(y):
             yy.append(y)
             xx.append(x)
     if len(yy)<3:
@@ -167,7 +171,7 @@ with PdfPages(pdf_file) as pdf0:
             log2nd_=[x for x,y in zip(log2nd,type_l)if y=='SAMPLE']
             ax0.scatter(seq0sam,log2nd_,s=2,color='k',alpha=.2)
             ax0.legend()
-            q1,q3=np.quantile(log2nd,[.1,.9])
+            q1,q3=np.quantile([x for x in log2nd if np.isfinite(x)],[.1,.9])
             ub=q3+max(1,q3-q1)
             lb=q1-max(1,q3-q1)
             ax0.set_ylim(lb-.5,ub+.5)
@@ -202,7 +206,7 @@ with PdfPages(pdf_file) as pdf0:
             ax1.scatter(seq0TQC,adj_dat0_,s=2,color='b')
             adj_dat0_=[x for x,y in zip(adj_dat0,type_l)if y=='SAMPLE']
             ax1.scatter(seq0sam,adj_dat0_,s=2,color='k',alpha=.2)
-            q1,q3=np.quantile(log2nd,[.1,.9])
+            q1,q3=np.quantile([x for x in log2nd if np.isfinite(x)],[.1,.9])
             ub=q3+max(1,q3-q1)
             lb=q1-max(1,q3-q1)
             ax1.set_ylim(lb-.5,ub+.5)

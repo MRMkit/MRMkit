@@ -18,8 +18,6 @@ param_dict=commonfn.read_param({ "length_of_ion_chromatogram" })
 
 peak_w=[int(x) for x in param_dict["length_of_ion_chromatogram"].split()]
 
-min_feat_height=1
-min_auc=min_feat_height*2
 
 Coef=collections.namedtuple('Coef',('rt sc coef'))
 
@@ -27,10 +25,12 @@ Coef=collections.namedtuple('Coef',('rt sc coef'))
 def findridge0(wave_scales,wave_sqrt,rerun,rerunw,EIC):
     eic_dict={rt:i for rt,i in EIC}
     rt_all=sorted(eic_dict)
+    I_sub=sorted(eic_dict.values(),reverse=True)
+    I_cut=I_sub[int(len(I_sub)*.6)]
     eic_rt=set()
     for x,y in eic_dict.items():
         pos=bisect_left(rt_all,x)
-        if rt_all[0]<x<rt_all[-1] and y>min_feat_height:
+        if rt_all[0]<x<rt_all[-1] and y>I_cut:
             eic_rt.add((rt_all[pos-1]+x)/2)
             eic_rt.add((rt_all[pos+1]+x)/2)
     eic_rt=sorted(eic_rt)
@@ -121,7 +121,7 @@ def findridge0(wave_scales,wave_sqrt,rerun,rerunw,EIC):
             if pos1+1<pos3 and max(eic_dict[rt0]for rt0 in rt_all[pos1+1:pos3])<apex_h:
                 pos1=pos3
             auc=sum((eic_dict[rt0]+eic_dict[rt1])*(rt1-rt0) for rt0,rt1 in zip(rt_all[pos0:],rt_all[pos0+1:pos1]))/2
-            if min_auc<auc:
+            if 0<auc:
                 peaks.append(Peak(peak_loc.rt,peak_loc.sc,len(rd),peak_loc.coef,auc,rt_all[pos0],rt_all[pos1-1]))
 
 
@@ -138,7 +138,7 @@ def findridge0(wave_scales,wave_sqrt,rerun,rerunw,EIC):
 
 
 
-    peaks.sort(key=operator.attrgetter('auc'),reverse=True)
+    peaks.sort(key=operator.attrgetter('coef'),reverse=True)
     peaks_=peaks[:]
     for nn,peak1 in enumerate(peaks_):
         for p in peaks_[nn+1:]:

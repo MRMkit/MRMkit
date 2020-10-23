@@ -52,9 +52,9 @@ def get_istd_dict(t_list):
 
 
 def find_trans(Q1Q3,trans):
-    pos0=bisect_left(Q1Q3,(trans.q1-.11,))
-    pos1=bisect_left(Q1Q3,(trans.q1+.11,))
-    filter0=[x for x in Q1Q3[pos0:pos1] if abs(x.q3-trans.q3)<.11 and x.minRT<trans.rt<x.maxRT]
+    pos0=bisect_left(Q1Q3,(trans.q1-.09,))
+    pos1=bisect_left(Q1Q3,(trans.q1+.09,))
+    filter0=[x for x in Q1Q3[pos0:pos1] if abs(x.q3-trans.q3)<.09 and x.minRT<trans.rt<x.maxRT]
     if filter0:
         return min(filter0,key=lambda x:abs((x.minRT+x.maxRT)/2-trans.rt))
     return None
