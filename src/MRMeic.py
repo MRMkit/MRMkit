@@ -2,24 +2,12 @@ import xml.etree.ElementTree as ET
 import base64
 import struct
 import zlib
-import sys
-import collections
-import operator
-import itertools
-from bisect import bisect_left
-import os
-import glob
-import concurrent.futures
-import re
-from multiprocessing import freeze_support
 
 import commonfn
 Eic=commonfn.Eic
 
-
-
 def bin2float(node):
-    d=base64.b64decode(node.findtext("./{http://psi.hupo.org/ms/mzml}binary"))
+    d=base64.b64decode(node.findtext("{http://psi.hupo.org/ms/mzml}binary"))
     if node.find("*/[@accession='MS:1000574']") is not None:
         d=zlib.decompress(d)
     fmt='<'+str(int(len(d)/4))+'f' if node.find("*/[@accession='MS:1000523']") is None else '<'+str(int(len(d)/8))+'d'
@@ -39,7 +27,7 @@ def print_eic(mzML_file):
     eic_dict0=dict()
     eickey=0
 
-    for _, element in ET.iterparse(open(mzML_file,'rb')):
+    for _, element in ET.iterparse(mzML_file):
         if element.tag == '{http://psi.hupo.org/ms/mzml}chromatogram':
             precursor=element.find("{http://psi.hupo.org/ms/mzml}precursor//*[@accession='MS:1000827']")
             product=element.find("{http://psi.hupo.org/ms/mzml}product//*[@accession='MS:1000827']")
@@ -49,8 +37,5 @@ def print_eic(mzML_file):
             rt_,I_=store_scan(element)
             eic_dict0[Eic(Q1,Q3,eickey,min(rt_),max(rt_))]=(rt_,I_)
             eickey+=1
-            element.clear()
-
     return {k:eic_dict0[k] for k in sorted(eic_dict0)}
-
 

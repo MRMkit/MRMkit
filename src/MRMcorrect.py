@@ -18,7 +18,6 @@ print('Matplotlib',matplotlib.__version__)
 
 
 import commonfn
-ppfile='peak_picking.txt'
 
 param_set={
         "mzML_files",
@@ -34,6 +33,11 @@ sig=float(param_dict.get("smoothing_sigma",10))
 corr0=int(param_dict["batch_correction"]) #set drift correction?
 transition=param_dict["transition_list"]
 t_list=commonfn.read_trans_stat(transition)
+
+ppfile='peak_picking.txt'
+if os.path.isfile(ppfile):
+    print(ppfile+' exists.')
+    input('Press Enter/Return to resume')
 
 miscdir='trans'
 
@@ -73,6 +77,7 @@ with open('missing_files.txt','w') as miss0:
             miss0.write("{} not in {}\n".format(f0,'directory'))
 
 norm_dat=[]
+unnorm_dat=[]
 with open('quant_auc_rt.txt') as quant:
     lsp1=quant.readline().rstrip('\n').split('\t')
     file_ord=[]
@@ -85,7 +90,8 @@ with open('quant_auc_rt.txt') as quant:
             type_l.append(file_type[file0])
     for line in quant:
         lsp=line.rstrip('\n').split('\t')
-        if lsp[starti+blocklen]:  #exclude ISTD
+        unnorm_dat.append(lsp[:starti]+[float(lsp[starti+fo]) for fo in file_ord])
+        if lsp[starti+blocklen]:
             norm_dat.append(lsp[:starti]+[float(lsp[starti+blocklen+fo]) for fo in file_ord])
 
 def dnorm(x):
@@ -96,69 +102,86 @@ dnorm_dict={ x:dnorm(x) for x in range(-largest_b,largest_b)}
 
 
 
-def gp_reg(ss,start0,end0):
-    xs=list(range(start0,end0))
-    yy=[]
-    xx=[]
-    for x,y in ss:
-        if np.isfinite(y):
-            yy.append(y)
-            xx.append(x)
+def gp_reg(ss,st0,en0):
+    xs=list(range(st0,en0))
+    yy=[y for x,y in ss if np.isfinite(y)]
     if len(yy)<3:
-        return xs,[0]*len(xs)
+        return xs,[0 for _ in xs]
     q1,q3=np.quantile(yy,[.1,.9])
     ub=q3+max(1,q3-q1)
     lb=q1-max(1,q3-q1)
-    ss=[(y,z) for y,z in zip(xx,yy) if lb<z<ub]
-    xx=[x for x,_ in ss]
-    yy=[x for _,x in ss]
-
-
-
+    ss_=[(y,z) for y,z in ss if lb<z<ub]
+    xx=[x for x,_ in ss_]
+    yy=[x for _,x in ss_]
 
     if corr0:
         Efs_yy=[sum(dnorm_dict[xs1-xx2]*yy[xxj]for xxj,xx2 in enumerate(xx))/sum(dnorm_dict[xs1-xx2]for xx2 in xx) for xs1 in xs]
     else:
-        Efs_yy=[0 for xs1 in xs]
+        Efs_yy=[0 for _ in xs]
     return xs,Efs_yy
 
 
 colord={'BQC':'r','TQC':'b','SAMPLE':'k'}
 colorl=[colord[x] for x in type_l]
-change_pt=[]
-for ii in range(len(batch_l)-1):
-    if batch_l[ii]!=batch_l[ii+1]:
-        change_pt.append(ii+1)
+change_pt=[ii+1 for ii in range(len(batch_l)-1)if batch_l[ii]!=batch_l[ii+1]]
 adj_dat=[]
-pdf_file='run_seq.pdf'
-with PdfPages(pdf_file) as pdf0:
+
+with PdfPages('run_seq_correction.pdf') as pdf0, PdfPages('run_seq_log2.pdf') as pdf1:
+    seq0=list(range(len(unnorm_dat[0])-starti))
+    seq0BQC=[x for x,y in zip(seq0,type_l)if y=='BQC']
+    seq0TQC=[x for x,y in zip(seq0,type_l)if y=='TQC']
+    seq0sam=[x for x,y in zip(seq0,type_l)if y=='SAMPLE']
+
+    for nn,nd0 in enumerate(unnorm_dat[:]):
+        print(nn,nd0[0])
+        plt.figure(figsize=(18,2))
+        plt.title(nd0[0]+'    log2-transformed peak area')
+        for cp0 in change_pt:
+            plt.axvline(x=cp0-.5,color='k',lw=1)
+        nd_=nd0[starti:]
+        log2nd=np.log2(nd_)
+        log2nd_=[x for x,y in zip(log2nd,type_l)if y=='BQC']
+        plt.scatter(seq0BQC,log2nd_,s=2,color='r',label='BQC')
+        log2nd_=[x for x,y in zip(log2nd,type_l)if y=='TQC']
+        plt.scatter(seq0TQC,log2nd_,s=2,color='b',label='TQC')
+        log2nd_=[x for x,y in zip(log2nd,type_l)if y=='SAMPLE']
+        plt.scatter(seq0sam,log2nd_,s=2,color='k',alpha=.2)
+
+        plt.legend()
+        q1,q3=np.quantile([x for x in log2nd if np.isfinite(x)],[.1,.9])
+        ub=q3+max(1,q3-q1)
+        lb=q1-max(1,q3-q1)
+        plt.ylim(lb-.5,ub+.5)
+
+        plt.tight_layout()
+        pdf1.savefig()
+        plt.close()
+
     seq0=list(range(len(norm_dat[0])-starti))
     seq0BQC=[x for x,y in zip(seq0,type_l)if y=='BQC']
     seq0TQC=[x for x,y in zip(seq0,type_l)if y=='TQC']
     seq0sam=[x for x,y in zip(seq0,type_l)if y=='SAMPLE']
     for nn,nd0 in enumerate(norm_dat[:]):
-        adj0_l=[]
-        adj_dat0=[]
         print(nn,nd0[0])
+        nd_=nd0[starti:]
         if plot0:
             fig, (ax0, ax1) = plt.subplots(2, sharex=True,figsize=(18, 4))
-            ax0.set_title(nd0[0])
+            ax0.set_title(nd0[0]+'    log2-transformed normalised peak area')
+            ax1.set_title('time trend and batch correction')
 
-        nd_=nd0[starti:]
-
-        if plot0:
             for cp0 in change_pt:
                 ax0.axvline(x=cp0-.5,color='k',lw=1)
                 ax1.axvline(x=cp0-.5,color='k',lw=1)
 
+        adj0_l=[]
         for cp0,cp1 in zip([0]+change_pt,change_pt+[len(batch_l)]):
             seq1=seq0[cp0:cp1]
             nd1=np.log2(nd_[cp0:cp1])
 
-            ss=[(y,z) for x,y,z in zip(type_l[cp0:cp1],seq1,nd1)]#if x=='SAMPLE']
+            ss=[(y,z) for x,y,z in zip(type_l[cp0:cp1],seq1,nd1)if x!='TQC']
             xy=gp_reg(ss,cp0,cp1)
 
-            if plot0:
+            if corr0 and plot0:
                 ax0.plot(xy[0], xy[1], 'g-',lw=1)
             adj0_l.append([(pt-gk) for pt,gk in zip(nd1,xy[1])])
 
@@ -176,29 +199,31 @@ with PdfPages(pdf_file) as pdf0:
             lb=q1-max(1,q3-q1)
             ax0.set_ylim(lb-.5,ub+.5)
 
-        nd=[math.log2(x) for x in nd_ if x>0]
+        nd=[math.log2(x) for x,y in zip(nd_,type_l) if x>0 and y!='TQC']
         if corr0:
             allmed=(statistics.median(nd)if nd else 0)
         else:
             allmed=0
 
+        adj_dat0=[]
         for adj0,cp0,cp1 in zip(adj0_l,[0]+change_pt,change_pt+[len(batch_l)]):
             seq1=seq0[cp0:cp1]
-            adj0_=[x for x in adj0 if np.isfinite(x)]
+            adj0_=[x for x,y in zip(adj0,type_l[cp0:cp1]) if np.isfinite(x) and y!='TQC']
+
             if corr0:
                 adjmed=(statistics.median(adj0_) if adj0_ else 0)
             else:
                 adjmed=0
 
-            nd1=[(x-adjmed+allmed if y!='TQC' else x+allmed) for y,x in zip(type_l[cp0:cp1],adj0)]
+            nd1=[(x-adjmed+allmed if y!='TQC' else tqcy) for y,x,tqcy in zip(type_l[cp0:cp1],adj0,np.log2(nd_[cp0:cp1]))]
 
-            if plot0:
-                ss=[(y,z) for x,y,z in zip(type_l[cp0:cp1],seq1,nd1)]#if x=='SAMPLE']
+            adj_dat0.extend(nd1)
+            if corr0 and plot0:
+                ss=[(y,z) for x,y,z in zip(type_l[cp0:cp1],seq1,nd1)if x!='TQC']
                 xy=gp_reg(ss,cp0,cp1)
 
                 ax1.plot(xy[0], xy[1], 'g-',lw=1)
 
-            adj_dat0.extend(nd1)
         if plot0:
             adj_dat0_=[x for x,y in zip(adj_dat0,type_l)if y=='BQC']
             ax1.scatter(seq0BQC,adj_dat0_,s=2,color='r')
@@ -214,13 +239,10 @@ with PdfPages(pdf_file) as pdf0:
         adj_dat.append(np.power(2,adj_dat0))
 
         if plot0:
-
             plt.tight_layout()
             pdf0.savefig()
             plt.close()
 
-
-    ...
 
 filenames0=[mzML_files[fo] for fo in file_ord]
 with open('batch_adjusted.txt','w') as adjf:
@@ -251,6 +273,8 @@ with open('batch_adjusted.txt') as my_op:
     batchBQC=set()
     my_TQCdict=collections.defaultdict(list)
     batchTQC=set()
+    my_SAMdict=collections.defaultdict(list)
+    batchSAM=set()
     for line in my_op:
         lsp=line.rstrip('\n').split('\t')
         if lsp[2]=='BQC':
@@ -261,7 +285,17 @@ with open('batch_adjusted.txt') as my_op:
             batchTQC.add(lsp[1])
             for l,cpdname,Q1,Q3,RT in zip(lsp[starti:],mylsp1,mylspQ1,mylspQ3,mylspRT):
                 my_TQCdict[lsp[1]+'\t'+cpdname+'\t'+Q1+'\t'+Q3].append(float(l))
+        elif lsp[2]=='SAMPLE':
+            batchSAM.add(lsp[1])
+            for l,cpdname,Q1,Q3,RT in zip(lsp[starti:],mylsp1,mylspQ1,mylspQ3,mylspRT):
+                my_SAMdict[lsp[1]+'\t'+cpdname+'\t'+Q1+'\t'+Q3].append(float(l))
+    for k,v in my_SAMdict.items():
+        q1,q3=np.quantile(v,[.1,.9])
+        ub=q3+max(1,q3-q1)
+        lb=q1-max(1,q3-q1)
+        my_SAMdict[k]=[vv for vv in v if lb<vv<ub]
     batchTQC=sorted(batchTQC)
+    batchSAM=sorted(batchSAM & batchBQC)
     batchBQC=sorted(batchBQC)
     npeaks=collections.defaultdict(list)
     for cpdname,Q1,Q3,RT in zip(mylsp1,mylspQ1,mylspQ3,mylspRT):
@@ -270,14 +304,12 @@ with open('batch_adjusted.txt') as my_op:
 
 
 CoVBQC=collections.defaultdict(list)
-with open("BQCtable.txt",'w') as qctab:
-    qctab.write('name\tQ1\tQ3\tRT\tave #peaks(BQC)\t%CoV_all\t'+'\t'.join('%CoV_'+x for x in batchBQC)+'\n')
+with open("BQC_CoV.txt",'w') as qctab:
+    qctab.write('name\tQ1\tQ3\tRT\tave #peaks\t%CoV_all\t'+'\t'.join('%CoV_'+x for x in batchBQC)+'\n')
     for cpdname,Q1,Q3,RT in zip(mylsp1,mylspQ1,mylspQ3,mylspRT):
         qctab.write('\t'.join((cpdname,Q1,Q3,RT)))
         qctab.write('\t{}'.format(len(npeaks[(cpdname.rsplit(' RT',1)[0],Q1,Q3,RT)])))
-        selquantBQC=[]
-        for b0 in batchBQC:
-            selquantBQC.extend(my_BQCdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3])
+        selquantBQC=[xx for b0 in batchBQC for xx in my_BQCdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3]]
         cov_=100*np.std(selquantBQC)/np.mean(selquantBQC)
         qctab.write('\t{:.1f}'.format(cov_))
         CoVBQC[(cpdname.rsplit(' RT',1)[0],Q1,Q3)].append(format(cov_,'.1f'))
@@ -287,20 +319,35 @@ with open("BQCtable.txt",'w') as qctab:
         qctab.write('\n')
 
 CoVTQC=collections.defaultdict(list)
-with open("TQCtable.txt",'w') as qctab:
-    qctab.write('name\tQ1\tQ3\tRT\tave #peaks(TQC)\t%CoV_all\t'+'\t'.join('%CoV_'+x for x in batchTQC)+'\n')
+with open("TQC_CoV.txt",'w') as qctab:
+    qctab.write('name\tQ1\tQ3\tRT\tave #peaks\t%CoV_all\t'+'\t'.join('%CoV_'+x for x in batchTQC)+'\n')
     for cpdname,Q1,Q3,RT in zip(mylsp1,mylspQ1,mylspQ3,mylspRT):
         qctab.write('\t'.join((cpdname,Q1,Q3,RT)))
         qctab.write('\t{}'.format(len(npeaks[(cpdname.rsplit(' RT',1)[0],Q1,Q3,RT)])))
-        selquantTQC=[]
-        for b0 in batchTQC:
-            selquantTQC.extend(my_TQCdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3])
+        selquantTQC=[xx for b0 in batchTQC for xx in my_TQCdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3]]
         cov_=100*np.std(selquantTQC)/np.mean(selquantTQC)
         qctab.write('\t{:.1f}'.format(cov_))
         CoVTQC[(cpdname.rsplit(' RT',1)[0],Q1,Q3)].append(format(cov_,'.1f'))
         for b0 in batchTQC:
             selquantTQC=my_TQCdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3]
             qctab.write('\t{:.1f}'.format(100*np.std(selquantTQC)/np.mean(selquantTQC)))
+        qctab.write('\n')
+
+Dratio=collections.defaultdict(list)
+with open("D_ratio.txt",'w') as qctab:
+    qctab.write('name\tQ1\tQ3\tRT\tave #peaks\t%D-ratio_all\t'+'\t'.join('%D-ratio_'+x for x in batchTQC)+'\n')
+    for cpdname,Q1,Q3,RT in zip(mylsp1,mylspQ1,mylspQ3,mylspRT):
+        qctab.write('\t'.join((cpdname,Q1,Q3,RT)))
+        qctab.write('\t{}'.format(len(npeaks[(cpdname.rsplit(' RT',1)[0],Q1,Q3,RT)])))
+        selquantSAM=[xx for b0 in batchSAM for xx in my_SAMdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3]]
+        selquantBQC=[xx for b0 in batchBQC for xx in my_BQCdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3]]
+        Dratio_=100*np.std(selquantBQC)/np.std(selquantSAM)
+        qctab.write('\t{:.1f}'.format(Dratio_))
+        Dratio[(cpdname.rsplit(' RT',1)[0],Q1,Q3)].append(format(Dratio_,'.1f'))
+        for b0 in batchSAM:
+            selquantSAM=my_SAMdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3]
+            selquantBQC=my_BQCdict[b0+'\t'+cpdname+'\t'+Q1+'\t'+Q3]
+            qctab.write('\t{:.1f}'.format(100*np.std(selquantBQC)/np.std(selquantSAM)))
         qctab.write('\n')
 
 
@@ -358,8 +405,12 @@ with PdfPages('expected_detected.pdf') as pdf0:
         plt.close()
 
 
+if os.path.isfile(ppfile):
+    print(ppfile+' exists, will not be overwriten')
+    sys.exit()
+
 with open(ppfile,'w') as usersRT:
-    usersRT.write('class\tname\tQ1\tQ3\t%CoV(TQC)\t%CoV(BQC)\texpectedRT\tdetectedRT\tusersRT\n')
+    usersRT.write('class\tname\tQ1\tQ3\t%CoV(TQC)\t%CoV(BQC)\tD-ratio\texpectedRT\tdetectedRT\tusersRT\n')
     for (cpd,q1,q3,rt),npeak in sorted(npeaks.items()):
         with open(os.path.join(miscdir,commonfn.format_filename('trans2_{}Q1_{}Q3_{}.txt'.format(cpd,q1,q3)))) as trans2:
             next(trans2)
@@ -373,4 +424,4 @@ with open(ppfile,'w') as usersRT:
         pred=min(npeak,key=lambda x:abs(itc+float(rt)-float(x)))
         if not q25<float(pred)<q75:
             pred=''
-        usersRT.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(class0,cpd,q1,q3,', '.join(CoVTQC[(cpd,q1,q3)]),', '.join(CoVBQC[(cpd,q1,q3)]),rt,', '.join(npeak),pred))
+        usersRT.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(class0,cpd,q1,q3,', '.join(CoVTQC[(cpd,q1,q3)]),', '.join(CoVBQC[(cpd,q1,q3)]),', '.join(Dratio[(cpd,q1,q3)]),rt,', '.join(npeak),pred))

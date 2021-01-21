@@ -33,7 +33,7 @@ def read_trans_stat(transition):
         trans.readline()
         for line in (l for l in trans if l.strip() and l[0]!='#'):
             lsp=[x.strip()for x in line.split('\t')]
-            if not lsp[2]:
+            if not lsp[2].strip():
                 lsp[2]=lsp[1]
             t_list.add(QQ(lsp[0],float(lsp[3]),float(lsp[4]),lsp[1],float(lsp[5]),lsp[2]))
     return sorted(t_list,key=operator.attrgetter('name'))
@@ -48,6 +48,8 @@ def get_istd_dict(t_list):
             pos0=bisect_left(sorted_name,trans.istd)
             if t_list[pos0].name==trans.istd:
                 istd_dict[trans.istd]=t_list[pos0]
+            else:
+                print('ISTD not found for {}'.format(trans.name))
     return istd_dict
 
 

@@ -6,7 +6,6 @@ import concurrent.futures
 import os
 import glob
 import itertools
-import time
 from functools import partial
 
 
@@ -36,10 +35,9 @@ print(len(istd_dict),'ISTDs')
 t_list=[x for x in t_list if x.istd in istd_dict]
 
 mzML_files=[]
-for x in param_dict["mzML_files"].split():
+for x in param_dict["mzML_files"].split('\t'):
     mzML_files.extend(glob.glob(x))
 mzML_files.sort()
-mzML_files=mzML_files[:]
 print(len(mzML_files),'mzML files')
 
 miscdir='trans'
@@ -107,7 +105,6 @@ def write_to_trans(eic_dict,trans):
 
 
 
-start_time = time.time()
 
 
 with open('trans_mzML_list.txt','w')as mf_list:
@@ -152,4 +149,3 @@ for trans_file in glob.glob(os.path.join(miscdir,'trans_*Q1_*Q3_*.txt')):
         os.remove(trans_file)
 
 
-print("Run time = {:.1f} mins  ".format(((time.time() - start_time)/60)))
