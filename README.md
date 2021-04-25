@@ -4,7 +4,7 @@
  
 <img src="Figure1_small.png" align="left">
 
-See the [manual](manual.pdf) for full documentation.
+See the [manual](https://github.com/MRMkit/MRMkit/releases/latest) for full documentation.
 
 ## Installing 
 
@@ -15,7 +15,7 @@ Installation of [python3](https://www.python.org/) (>=3.7), NumPy, Matplotlib an
 ### Windows
 
 Installation of [R](https://cran.r-project.org/) (>=4.0) is required.
-Executables for 64-bit Windows are included [here](https://github.com/MRMkit/MRMkit/releases/).
+Executables for 64-bit Windows are included [here](https://github.com/MRMkit/MRMkit/releases/latest).
 
 ## Demo files
 
