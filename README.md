@@ -4,8 +4,6 @@
  
 <img src="Figure1_small.png" align="left">
 
-See the [manual](https://github.com/MRMkit/MRMkit/releases/latest) for full documentation.
-
 ## Windows
 
 Installation of [R](https://cran.r-project.org/) (>=4.0) is required.
