@@ -8,10 +8,6 @@ See the [manual](https://github.com/MRMkit/MRMkit/releases/latest) for full docu
 
 ## Installing 
 
-### Unix
-
-Installation of [python3](https://www.python.org/) (>=3.7), NumPy, Matplotlib and [R](https://cran.r-project.org/) (>=4.0) is required.
-
 ### Windows
 
 Installation of [R](https://cran.r-project.org/) (>=4.0) is required.
