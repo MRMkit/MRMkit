@@ -2,7 +2,7 @@
 
 ## MRMkit: automated data processing for large-scale targeted mass spectrometry
  
-<img src="Figure1_small.png" align="left">
+<img src="MRMkit-GitHub.png" align="left">
 
 ## Windows
 
