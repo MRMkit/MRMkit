@@ -6,7 +6,6 @@
 
 ## Windows
 
-Installation of [R](https://cran.r-project.org/) (>=4.0) is required.
 Executables for 64-bit Windows are included [here](https://github.com/MRMkit/MRMkit/releases/latest).
 
 ## Example dataset
